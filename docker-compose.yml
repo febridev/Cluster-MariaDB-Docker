@@ -1,0 +1,119 @@
+version: "3"
+services:
+  #mariadb-1
+  mariadb1:
+    image: mariadb:11.1.2
+    container_name: mariadb1
+    ports:
+      - "3306:3306"
+    env_file: .env
+    environment:
+      - MARIADB_USER=${MARIADB_USER_1}
+      - MARIADB_PASSWORD=${MARIADB_PASSWORD_1}
+      - MARIADB_DATABASE=${MARIADB_DATABASE_1}
+      - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
+    volumes:
+      - ./mariadb1/config/server.cnf:/etc/mysql/mariadb.conf.d/server.cnf
+      - ./mariadb1/data:/var/lib/mysql
+    cap_add:
+      - all
+    networks:
+      - mariadb_galera
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 1024M
+        reservations:
+          cpus: "0.5"
+          memory: 1024M
+
+  #mariadb-2
+  mariadb2:
+    image: mariadb:11.1.2
+    container_name: mariadb2
+    ports:
+      - "3307:3306"
+    env_file: .env
+    environment:
+      - MARIADB_USER=${MARIADB_USER_2}
+      - MARIADB_PASSWORD=${MARIADB_PASSWORD_2}
+      - MARIADB_DATABASE=${MARIADB_DATABASE_2}
+      - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
+    volumes:
+      - ./mariadb2/config/server.cnf:/etc/mysql/mariadb.conf.d/server.cnf
+      - ./mariadb2/data:/var/lib/mysql
+    cap_add:
+      - all
+    networks:
+      - mariadb_galera
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 1024M
+        reservations:
+          cpus: "0.5"
+          memory: 1024M
+    depends_on:
+      - mariadb1
+
+  #mariadb-2
+  mariadb3:
+    image: mariadb:11.1.2
+    container_name: mariadb3
+    ports:
+      - "3308:3306"
+    env_file: .env
+    volumes:
+      - ./mariadb3/config/server.cnf:/etc/mysql/mariadb.conf.d/server.cnf
+      - ./mariadb3/data:/var/lib/mysql
+    environment:
+      - MARIADB_USER=${MARIADB_USER_3}
+      - MARIADB_PASSWORD=${MARIADB_PASSWORD_3}
+      - MARIADB_DATABASE=${MARIADB_DATABASE_3}
+      - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
+    cap_add:
+      - all
+    networks:
+      - mariadb_galera
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 1024M
+        reservations:
+          cpus: "0.5"
+          memory: 1024M
+    depends_on:
+      - mariadb2
+
+  maxscale:
+    container_name: maxscale_dev
+    image: mariadb/maxscale:latest
+    ports:
+      - "43306:43306"
+      - "8989:8989"
+    volumes:
+      - ./maxscale/config/maxscale.cnf:/etc/maxscale.cnf
+    networks:
+      - mariadb_galera
+    depends_on:
+      - mariadb3
+
+  #proxysql
+  # proxysql:
+  #   image: proxysql/proxysql:latest
+  #   container_name: proxysql
+  #   ports:
+  #    - "6032:6032"
+  #    - "6070:6070"
+  #    - "6080:6080"
+  #   cap_add:
+  #    - all
+  #   networks:
+  #    - mariadb_galera
+
+networks:
+  mariadb_galera:
+    external: true
